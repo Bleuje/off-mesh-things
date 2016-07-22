@@ -1,8 +1,8 @@
 /************
 Etienne JACOB 22/07/2016
 ---
-Convert a list of triangles and a list of vertices to OFF file format,
-works on TOSCA datasets : http://tosca.cs.technion.ac.il/book/resources_data.html
+Convert a list of triangles and a list of vertices (.tri and .vert files) to OFF file format.
+It should work on TOSCA datasets given there : http://tosca.cs.technion.ac.il/book/resources_data.html
 ---
 this code uses C++11 features
 *************/
@@ -19,6 +19,9 @@ int nbTri,nbVert,nbEdges;
 
 ///PATH where the files will be loaded and created
 string path = "C:/Users/New user/Downloads/nonrigid3d/";
+
+string name = "david";
+///Here david0.tri, david0.vert, david1.tri, david1.vert, ... will be loaded.
 
 int readTri(string filename){
     filename = path + filename;
@@ -80,24 +83,32 @@ void write(string filename){
     }
 }
 
+void convertOne(string name,int num){
+    cout<<"Converting "<<num<<"...";
+    string filenameTri = name+to_string(num)+".tri";
+    string filenameVert = name+to_string(num)+".vert";
+
+    nbVert = readVert(filenameVert);
+    nbTri = readTri(filenameTri);
+    nbEdges = countEdges();
+
+    string filenameOff = name+to_string(num)+".off";
+    write(filenameOff);
+    cout <<"done\n";
+}
+
 void convert(string name,int numMax){
     for(int num=0;num<numMax;num++){
-        cout<<"Converting "<<num<<"...";
-        string filenameTri = name+to_string(num)+".tri";
-        string filenameVert = name+to_string(num)+".vert";
-
-        nbVert = readVert(filenameVert);
-        nbTri = readTri(filenameTri);
-        nbEdges = countEdges();
-
-        string filenameOff = name+to_string(num)+".off";
-        write(filenameOff);
-        cout <<"done\n";
+        convertOne(name,num);
     }
 }
 
 int main(){
-    convert("david",15);
+    /// convert mesh david4
+    convertOne(name,4);
+
+    /// convert the "david" meshes from 0 to 14
+    convert(name,15);
 
     return 0;
 }
