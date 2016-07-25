@@ -4,4 +4,4 @@ Convert a list of triangles and a list of vertices (.tri and .vert files) to OFF
 
 This code uses C++11 features
 ### meshlab-scriptmaker
-Script maker to convert FAUST registrations from .ply to .off using MeshLab
+Script maker in C++ to convert FAUST registrations from .ply to .off using MeshLab
