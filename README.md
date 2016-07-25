@@ -1,8 +1,8 @@
 # off-mesh-conversion
 ### tri-vert-to-off
-Convert a list of triangles and a list of vertices (.tri and .vert files) to OFF file format. It should work on TOSCA datasets given there : http://tosca.cs.technion.ac.il/book/resources_data.html
+Convert a list of triangles and a list of vertices (.tri and .vert files) to OFF file format. It should work on TOSCA datasets given there : [TOSCA dataset](http://tosca.cs.technion.ac.il/book/resources_data.html)
 
-I used this to try on TOSCA shapes the shape matching descriptor learning method described here :
+I used this to try the shape matching descriptor learning method described below on TOSCA shapes :
 [learning.pdf](http://www.lix.polytechnique.fr/~corman/Papers/learning.pdf)
 
 The code is downloadable here : [learning.zip](http://www.lix.polytechnique.fr/~corman/Code/learning.zip)
