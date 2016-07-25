@@ -4,6 +4,7 @@ Convert a list of triangles and a list of vertices (.tri and .vert files) to OFF
 
 I used this to try on TOSCA shapes the shape matching descriptor learning method described here :
 [learning.pdf](http://www.lix.polytechnique.fr/~corman/Papers/learning.pdf)
+
 The code is downloadable here : [learning.zip](http://www.lix.polytechnique.fr/~corman/Code/learning.zip)
 
 This code uses C++11 features
