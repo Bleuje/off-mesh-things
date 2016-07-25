@@ -10,7 +10,7 @@ int main(){
     ofstream out ("faustGTconversion.bat");
 
     /// put your MeshLab path here
-    out << "set PATH=\%PATH%;C:/Program Files/VCG/MeshLab";
+    out << "set PATH=%PATH%;C:/Program Files/VCG/MeshLab";
 
     for(int i=0;i<100;i++){
         out << "meshlabserver -i tr_reg_" << i/100 << (i/10)%10 << i%10 << ".ply -o gtfaustoff_all" << i << ".off\n";
