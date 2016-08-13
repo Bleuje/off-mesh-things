@@ -22,7 +22,6 @@ const float INFINITE = 1e5;
 float vert[MAX_SIZE_V][3][2];
 int triangles[MAX_SIZE_T][3][2];
 int n[2],p[2],m[2];
-unordered_set<int> graphMeshSet[MAX_SIZE_V][2];
 vector<int> graphMesh[MAX_SIZE_V][2];
 float geoDistances[SAMPLE_SIZE][MAX_SIZE_V][2];
 
@@ -36,6 +35,14 @@ float shortDist(const int& i1,const int& i2,const int& mesh){
     return sqrt((vert[i1][0][mesh]-vert[i2][0][mesh])*(vert[i1][0][mesh]-vert[i2][0][mesh]) + (vert[i1][1][mesh]-vert[i2][1][mesh])*(vert[i1][1][mesh]-vert[i2][1][mesh]) + (vert[i1][2][mesh]-vert[i2][2][mesh])*(vert[i1][2][mesh]-vert[i2][2][mesh]));
 }
 
+bool isNew(const int& v,const int& mesh, const int& val){
+    for(int i=0;i<int(graphMesh[v][mesh].size());i++){
+        if(graphMesh[v][mesh][i]==val){
+            return false;
+        }
+    }
+    return true;
+}
 
 void loadMesh(const string& name,const int& mesh){
     string filepath = path + name + ".off";
@@ -52,22 +59,15 @@ void loadMesh(const string& name,const int& mesh){
     for(int i=0;i<p[mesh];i++){
         int waste;in>>waste;
         int v1,v2,v3;in>>v1>>v2>>v3;
-        graphMeshSet[v1][mesh].insert(v2);
-        graphMeshSet[v2][mesh].insert(v1);
-        graphMeshSet[v3][mesh].insert(v2);
-        graphMeshSet[v2][mesh].insert(v3);
-        graphMeshSet[v1][mesh].insert(v3);
-        graphMeshSet[v3][mesh].insert(v1);
+        if(isNew(v1,mesh,v2)) graphMesh[v1][mesh].push_back(v2);
+        if(isNew(v2,mesh,v1)) graphMesh[v2][mesh].push_back(v1);
+        if(isNew(v3,mesh,v2)) graphMesh[v3][mesh].push_back(v2);
+        if(isNew(v2,mesh,v3)) graphMesh[v2][mesh].push_back(v3);
+        if(isNew(v1,mesh,v3)) graphMesh[v1][mesh].push_back(v3);
+        if(isNew(v3,mesh,v1)) graphMesh[v3][mesh].push_back(v1);
         triangles[i][0][mesh]=v1;
         triangles[i][1][mesh]=v2;
         triangles[i][2][mesh]=v3;
-    }
-
-    unordered_set<int>::iterator it;
-    for(int i=0;i<n[mesh];i++){
-        for(it = graphMeshSet[i][mesh].begin();it != graphMeshSet[i][mesh].end();it++){
-            graphMesh[i][mesh].push_back(*it);
-        }
     }
 
     if(int(samplingVec.size())<=0){
