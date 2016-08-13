@@ -18,6 +18,7 @@ const int MAX_SIZE_V = 7000;
 const int MAX_SIZE_T = 15000;
 const int SAMPLE_SIZE = 500;
 const float INFINITE = 1e5;
+const float VOTE_LIM = 0.2;
 
 float vert[MAX_SIZE_V][3][2];
 int triangles[MAX_SIZE_T][3][2];
@@ -108,6 +109,18 @@ vector<int> loadCorr(const string& name){
     return corr;
 }
 
+void saveCorr(const string& name,const vector<int>& corr){
+    string filepath = path2 + name + ".txt";
+    ofstream out (filepath);
+
+    int sz=corr.size();
+    out<<sz<<"\n";
+
+    for(int i=0;i<sz;i++){
+        out<<corr[i]+1<<" ";
+    }
+}
+
 set<int> bfs(const int& start,const int& nb,const int& mesh){
     set<int> res;
     vector<bool> visited(n[mesh],0);
@@ -133,7 +146,7 @@ set<int> bfs(const int& start,const int& nb,const int& mesh){
 
 long long evaluate(const int& p,const vector<int>& corr){
     long long res = 250;
-    float dThreshold = 0.2;
+    float dThreshold = VOTE_LIM;
     for(int i=0;i<SAMPLE_SIZE;i++){
         if(abs(geoDistances[i][p][0] - geoDistances[i][corr[p]][1])<dThreshold){
             res--;
@@ -181,7 +194,7 @@ void reconstruct(const set<int>& points,const string& name,const int& mesh){
     }
 }
 
-int reconstructCorrectGeo(const string& name,const int& threshold,vector<int>& corr){
+int reconstructCorrectGeo(const string& name,const int& threshold,vector<int>& corr,const& opt){
     string filepath = path + name + "_cgeo.off";
     ofstream out (filepath);
 
@@ -199,18 +212,20 @@ int reconstructCorrectGeo(const string& name,const int& threshold,vector<int>& c
         else{
             int theMin = before;
             int jmin = corr[i];
-            for(int j=0;j<n[1];j++){
-                corr[i]=j;
-                int aux = evaluate(i,corr);
-                if(aux<theMin){
-                    theMin = aux;
-                    jmin=j;
+            if(opt){
+                for(int j=0;j<n[1];j++){
+                    corr[i]=j;
+                    int aux = evaluate(i,corr);
+                    if(aux<theMin){
+                        theMin = aux;
+                        jmin=j;
+                    }
                 }
             }
             corr[i]=jmin;
             state[i]=(theMin<threshold);
             cnt+=state[i];
-            cout << before - theMin <<" "<<-before<<" "<<-theMin<<"\n";
+            if(i%25==0 && opt){cout << before - theMin <<" "<<-before<<" "<<-theMin<<"\n";}
         }
     }
     //sort(pointsVec.begin(),pointsVec.end());
@@ -274,11 +289,143 @@ void dijkstraFill(const int& start,const int& posTab,const int& mesh){
     }
 }
 
+float simpleGlobalEval(const vector<int>& corr){
+    double res = 0;
+    for(int i=0;i<n[0];i++){
+        res += shortDist(i,corr[i],1)/n[0];
+    }
+    return res;
+}
+
+int defineTs(const vector<int>& corr){
+    vector<int> aux;
+    int SZ = 50;
+    for(int i=0;i<SZ;i++){
+        aux.push_back(evaluate(rand()%(n[0]),corr));
+    }
+    sort(aux.begin(),aux.end());
+    return aux[7*SZ/8];
+}
+
+void refineSamples(const int& nSteps,const vector<int>& corr){
+    for(int i=0;i<SAMPLE_SIZE;i++){
+        sampleEval[i]=evaluate(samplingVec[i],corr);
+    }
+    for(int k=0;k<nSteps;k++){
+        int theMax = -1e5;
+        int iMax = 0;
+        for(int i=0;i<SAMPLE_SIZE;i++){
+            if(sampleEval[i]>theMax){
+                iMax = i;
+                theMax = sampleEval[i];
+            }
+        }
+        /*
+        int theMin = 1e5;
+        int jmin = corr[iMax];
+        for(int j=0;j<n[1];j++){
+            corr[iMax]=j;
+            int aux = evaluate(iMax,corr);
+            if(aux<theMin){
+                theMin = aux;
+                jmin=j;
+            }
+        }
+        corr[iMax]=jmin;*/
+
+        samplingVec[iMax] = rand()%(n[0]);
+
+        for(int i=0;i<SAMPLE_SIZE;i++){
+            if(i==iMax){
+                ;
+            }
+            else{
+                if(abs(geoDistances[i][samplingVec[iMax]][0] - geoDistances[i][corr[samplingVec[iMax]]][1])<VOTE_LIM){
+                    sampleEval[i]++;
+                }
+            }
+        }
+
+        dijkstraFill(samplingVec[iMax],iMax,0);
+        dijkstraFill(corr[samplingVec[iMax]],iMax,0);
+
+        for(int i=0;i<SAMPLE_SIZE;i++){
+            if(i==iMax){
+                sampleEval[i]=evaluate(samplingVec[i],corr);
+            }
+            else{
+                if(abs(geoDistances[i][samplingVec[iMax]][0] - geoDistances[i][corr[samplingVec[iMax]]][1])<VOTE_LIM){
+                    sampleEval[i]--;
+                }
+            }
+        }
+
+    }
+}
+
+void refineSamples2(const int& nSteps,vector<int>& corr){
+    for(int i=0;i<SAMPLE_SIZE;i++){
+        sampleEval[i]=evaluate(samplingVec[i],corr);
+    }
+    for(int k=0;k<nSteps;k++){
+        int theMax = -1e5;
+        int iMax = 0;
+        for(int i=0;i<SAMPLE_SIZE;i++){
+            if(sampleEval[i]>theMax){
+                iMax = i;
+                theMax = sampleEval[i];
+            }
+        }
+
+        int theMin = 1e5;
+        int jmin = corr[iMax];
+        for(int j=0;j<n[1];j++){
+            corr[iMax]=j;
+            int aux = evaluate(iMax,corr);
+            if(aux<theMin){
+                theMin = aux;
+                jmin=j;
+            }
+        }
+        corr[iMax]=jmin;
+
+        //samplingVec[iMax] = rand()%(n[0]);
+
+        for(int i=0;i<SAMPLE_SIZE;i++){
+            if(i==iMax){
+                ;
+            }
+            else{
+                if(abs(geoDistances[i][samplingVec[iMax]][0] - geoDistances[i][corr[samplingVec[iMax]]][1])<VOTE_LIM){
+                    sampleEval[i]++;
+                }
+            }
+        }
+
+        //dijkstraFill(samplingVec[iMax],iMax,0);
+        dijkstraFill(corr[samplingVec[iMax]],iMax,0);
+
+        for(int i=0;i<SAMPLE_SIZE;i++){
+            if(i==iMax){
+                sampleEval[i]=evaluate(samplingVec[i],corr);
+            }
+            else{
+                if(abs(geoDistances[i][samplingVec[iMax]][0] - geoDistances[i][corr[samplingVec[iMax]]][1])<VOTE_LIM){
+                    sampleEval[i]--;
+                }
+            }
+        }
+
+    }
+}
 
 int main(){
-    vector<int> corr = loadCorr("corr68_60");
-    loadMesh("gtfaustoff_all68",0);
-    loadMesh("gtfaustoff_all60",1);
+    srand(time(0));
+
+    vector<int> corr = loadCorr("corr41_1");
+    loadMesh("gtfaustoff_all41",0);
+    loadMesh("gtfaustoff_all1",1);
+    cout << "loading ok ... \n\n";
 
     for(int i=0;i<SAMPLE_SIZE;i++){
         dijkstraFill(samplingVec[i],i,0);
@@ -290,12 +437,22 @@ int main(){
         cout << "Dijkstra from " << i << "/" << 499 << "done.\n";
     }
 
-    cout << evaluate(0,corr) << endl;
-    cout << evaluate(1,corr) << endl;
-    cout << evaluate(2,corr) << endl;
+    cout << "Voters refinement ...\n";
+    refineSamples(200,corr);
+    //refineSamples2(200,corr);
+    cout << "Voters refinement done.\n";
 
-    int nbCorrect = reconstructCorrectGeo("gtfaustoff_all68",-100,corr);
+    cout << endl << simpleGlobalEval(corr) << endl << endl;
+
+    int ts = defineTs(corr);
+
+    int nbCorrect = reconstructCorrectGeo("gtfaustoff_all41_2",ts,corr,1);
+    nbCorrect = reconstructCorrectGeo("gtfaustoff_all41_2",ts-50,corr,0);
     cout << "Correct : " << nbCorrect << " / " << n[0] << endl;
+
+    cout << endl << simpleGlobalEval(corr) << endl << endl;
+
+    saveCorr("corr41_1__2",corr);
 
     return 0;
 }
