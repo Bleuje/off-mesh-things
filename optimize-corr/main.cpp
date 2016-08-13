@@ -22,13 +22,14 @@ const float INFINITE = 1e5;
 float vert[MAX_SIZE_V][3][2];
 int triangles[MAX_SIZE_T][3][2];
 int n[2],p[2],m[2];
-set<int> graphMeshSet[MAX_SIZE_V][2];
+unordered_set<int> graphMeshSet[MAX_SIZE_V][2];
 vector<int> graphMesh[MAX_SIZE_V][2];
 float geoDistances[SAMPLE_SIZE][MAX_SIZE_V][2];
 
 vector<int> samplingVec;
 map<int,int> indexS;
 string header;
+int sampleEval[SAMPLE_SIZE];
 
 
 float shortDist(const int& i1,const int& i2,const int& mesh){
@@ -62,7 +63,7 @@ void loadMesh(const string& name,const int& mesh){
         triangles[i][2][mesh]=v3;
     }
 
-    set<int>::iterator it;
+    unordered_set<int>::iterator it;
     for(int i=0;i<n[mesh];i++){
         for(it = graphMeshSet[i][mesh].begin();it != graphMeshSet[i][mesh].end();it++){
             graphMesh[i][mesh].push_back(*it);
